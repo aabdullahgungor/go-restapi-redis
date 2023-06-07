@@ -1,17 +1,19 @@
 package repository
 
 import (
-	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"strconv"
 
 	"github.com/aabdullahgungor/go-restapi-redis/model"
 	"github.com/go-redis/redis"
 )
 
 var (
-	ErrCarNotFound = errors.New("FromRepository - car not found")
-	Ctx            = context.TODO()
+	ErrCarNotFound  = errors.New("fromRepository - car not found")
+	ErrCarNotCreate = errors.New("fromRepository - car not create")
 )
 
 type RedisCarRepository struct {
@@ -46,7 +48,19 @@ func (r *RedisCarRepository) GetCarById(id string) (model.Car, error) {
 }
 
 func (r *RedisCarRepository) CreateCar(car *model.Car) error {
-
+	IDKEY := strconv.Itoa(car.Id)
+	jsonCar, errJson := json.Marshal(&car)
+	if errJson != nil {
+		fmt.Println("fromRepository", errJson)
+		return ErrCarNotCreate
+	}
+	errRedis := r.connectionPool.Set(IDKEY, jsonCar, 0).Err()
+	if errRedis != nil {
+		fmt.Println("fromRepository", errRedis)
+		return ErrCarNotCreate
+	}
+	log.Printf("\ndisplay the ids of the newly inserted car: %v", car.Id)
+	return nil
 }
 
 func (r *RedisCarRepository) EditCar(car *model.Car) error {

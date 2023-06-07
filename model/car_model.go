@@ -5,7 +5,7 @@ import (
 )
 
 type Car struct {
-	Id        uint      `json:"id"`
+	Id        int       `json:"id"`
 	Brand     string    `json:"brand"`
 	Series    string    `json:"series"`
 	Year      time.Time `json:"year"`
