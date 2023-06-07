@@ -16,6 +16,7 @@ var (
 	ErrCarNotCreate  = errors.New("fromRepository - car not create")
 	ErrCarsNotGet    = errors.New("fromRepository - cars couldn't get")
 	ErrCarNotDeleted = errors.New("fromRepository - car not deleted")
+	ErrSameCarId     = errors.New("fromRepository - the same id cannot be used")
 )
 
 type RedisCarRepository struct {
@@ -87,12 +88,24 @@ func (r *RedisCarRepository) GetCarById(id string) (model.Car, error) {
 
 func (r *RedisCarRepository) CreateCar(car *model.Car) error {
 	IDKEY := strconv.Itoa(car.Id)
+	// Get all the keys matching
+	keys, errRedis := r.connectionPool.Keys("*").Result()
+	for key := range keys {
+		if IDKEY == keys[key] {
+			fmt.Println("The same id cannot be used.")
+			return ErrSameCarId
+		}
+	}
+	if errRedis != nil {
+		fmt.Println("fromRepository", errRedis)
+	}
+
 	jsonCar, errJson := json.Marshal(&car)
 	if errJson != nil {
 		fmt.Println("fromRepository", errJson)
 		return ErrCarNotCreate
 	}
-	errRedis := r.connectionPool.Set(IDKEY, jsonCar, 0).Err()
+	errRedis = r.connectionPool.Set(IDKEY, jsonCar, 0).Err()
 	if errRedis != nil {
 		fmt.Println("fromRepository", errRedis)
 		return ErrCarNotCreate
