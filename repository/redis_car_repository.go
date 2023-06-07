@@ -103,12 +103,17 @@ func (r *RedisCarRepository) CreateCar(car *model.Car) error {
 
 func (r *RedisCarRepository) EditCar(car *model.Car) error {
 	IDKEY := strconv.Itoa(car.Id)
+	_, errRedis := r.connectionPool.Del(IDKEY).Result()
+	if errRedis != nil {
+		fmt.Println("Data deleted error:", errRedis)
+		return ErrCarNotDeleted
+	}
 	jsonCar, errJson := json.Marshal(&car)
 	if errJson != nil {
 		fmt.Println("fromRepository", errJson)
 		return ErrCarNotCreate
 	}
-	errRedis := r.connectionPool.Set(IDKEY, jsonCar, 0).Err()
+	errRedis = r.connectionPool.Set(IDKEY, jsonCar, 0).Err()
 	if errRedis != nil {
 		fmt.Println("fromRepository", errRedis)
 		return ErrCarNotCreate
